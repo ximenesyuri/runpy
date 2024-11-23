@@ -84,18 +84,40 @@ endfunction
 
 function! RunPyExecute(target_file, venv_path)
     let l:python_cmd = (a:venv_path ==# '') ? 'python3' : a:venv_path . '/bin/python3'
-    let l:output = system(l:python_cmd . ' ' . shellescape(a:target_file))
-    execute 'new'
+    let l:command = l:python_cmd . ' ' . shellescape(a:target_file)
+    
+    let l:output = system(l:command)
+
+    execute 'vnew'
     call setline(1, split(l:output, "\n"))
     setlocal buftype=nofile
     setlocal bufhidden=hide
+    setlocal noswapfile
+    setlocal bufname=runpy_output
+
+    resize
 endfunction
 
 function! RunPy()
     let l:current_file = expand('%:p')
     let l:root_dir = RunPyFindRootDirectory(fnamemodify(l:current_file, ':p:h'))
+    if l:root_dir == ''
+        echom 'Root directory not found. Ensure pyproject.toml exists or g:runpy_root is set.'
+        return
+    endif
+
     let l:venv_path = RunPyFindVenv(l:root_dir)
     let l:target_dir = RunPyCopyProject(l:root_dir, l:venv_path)
+    if l:target_dir == ''
+        echom 'Failed to copy project to tmp directory.'
+        return
+    endif
+
     let l:target_file = RunPyModifyFile(l:target_dir)
+    if l:target_file == ''
+        echom 'Failed to modify target file.'
+        return
+    endif
+
     call RunPyExecute(l:target_file, l:venv_path)
 endfunction
