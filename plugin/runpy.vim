@@ -41,24 +41,22 @@ function! RunPyCopyProject(root_dir, venv_path)
 endfunction
 
 function! RunPyModifyFile(target_dir)
-    let l:file_path = a:target_dir . '/' . expand('%:t')
-
-    " Check if file_path exists
+    let l:current_file = expand('%:p')
+    let l:root_dir = RunPyFindRootDirectory(fnamemodify(l:current_file, ':p:h'))
+    let l:relative_path = substitute(l:current_file, '^' . escape(l:root_dir, '/'), '', '')
+    let l:file_path = a:target_dir . l:relative_path
+    echom 'Modifying file: ' . l:file_path
     if !filereadable(l:file_path)
         echom 'File does not exist: ' . l:file_path
         return ''
     endif
-
     let l:lines = readfile(l:file_path)
-
     let l:new_lines = []
     let l:in_block = 0
-
     for line in l:lines
         if line =~ '^# >>> BEGIN'
             let l:in_block = 1
         endif
-
         if l:in_block
             if line =~ '^# ' | continue | endif
             if line =~ '^# >>> END'
@@ -66,36 +64,57 @@ function! RunPyModifyFile(target_dir)
                 continue
             endif
         endif
-        
         if line =~ '^# >'
-            let line = substitute(line, '^# >', '', '')
+            let line = substitute(line, '^# > ', '', '')
         endif
-
         if !l:in_block || line !~ '^# '
-            " Collecting valid lines
             call add(l:new_lines, line)
         endif
     endfor
-
     call writefile(l:new_lines, l:file_path)
-
     return l:file_path
 endfunction
 
 function! RunPyExecute(target_file, venv_path)
+    if !exists('g:runpy_buffer_size')
+        let g:runpy_buffer_size = 10
+    endif
+    if !exists('g:runpy_buffer_direction')
+        let g:runpy_buffer_direction = 'horizontal'
+    endif
+    if !exists('g:runpy_buffer_position')
+        let g:runpy_buffer_position = 'below'
+    endif
     let l:python_cmd = (a:venv_path ==# '') ? 'python3' : a:venv_path . '/bin/python3'
     let l:command = l:python_cmd . ' ' . shellescape(a:target_file)
-    
-    let l:output = system(l:command)
-
-    execute 'vnew'
-    call setline(1, split(l:output, "\n"))
+    let l:output = system(l:command . ' 2>&1')
+    let l:bufnr = bufexists('runpy_output') ? bufwinnr('runpy_output') : -1
+    if l:bufnr != -1
+        execute l:bufnr . 'wincmd w'
+        execute '%delete _'
+    else
+        let l:position_cmd = (g:runpy_buffer_position ==# 'above') ? 'topleft ' : 'botright '
+        if g:runpy_buffer_direction ==# 'vertical'
+            execute 'silent! ' . l:position_cmd . 'vertical new'
+            execute 'vertical resize ' . g:runpy_buffer_size
+        else
+            execute 'silent! ' . l:position_cmd . 'new'
+            execute 'resize ' . g:runpy_buffer_size . '%'
+        endif
+        execute 'file runpy_output'
+    endif
+    if !empty(l:output)
+        call setline(1, split(l:output, "\n"))
+    else
+        call setline(1, ["No output captured."])
+    endif
     setlocal buftype=nofile
     setlocal bufhidden=hide
     setlocal noswapfile
-    setlocal bufname=runpy_output
-
-    resize
+    if exists(':AnsiEsc')
+        execute 'AnsiEsc'
+    endif
+    redraw!
 endfunction
 
 function! RunPy()
@@ -105,19 +124,16 @@ function! RunPy()
         echom 'Root directory not found. Ensure pyproject.toml exists or g:runpy_root is set.'
         return
     endif
-
     let l:venv_path = RunPyFindVenv(l:root_dir)
     let l:target_dir = RunPyCopyProject(l:root_dir, l:venv_path)
     if l:target_dir == ''
         echom 'Failed to copy project to tmp directory.'
         return
     endif
-
     let l:target_file = RunPyModifyFile(l:target_dir)
     if l:target_file == ''
         echom 'Failed to modify target file.'
         return
     endif
-
     call RunPyExecute(l:target_file, l:venv_path)
 endfunction
