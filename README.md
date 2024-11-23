@@ -15,6 +15,35 @@
 > 1. begin a comment block with `# >>> BEGIN`
 > 2. end it with `# >>> END`
 
+# Install
+
+As usual.
+
+# ANSI
+
+If the Python output uses ANSI code, they are rendered inside the Vim buffer. However, [AnsiEsc](https://github.com/vim-scripts/AnsiEsc.vim) must be installed.
+
+# Configuration
+
+By default, `runpy` tries to look at [poetry](https://github.com/python-poetry/poetry) configurations. If you are not using `poetry`, you must set the following global variables in your `.vimrc` file:
+
+```
+variable                  meaning                          default
+-------------------------------------------------------------------------------------------
+g:runpy_root              path to project root dir         parent dir containing pyproject.toml
+g:runpy_venv              path to project venv             that defined in "poetry venv info"
+```
+
+The geometry of the buffer with the output of the executed code can be set as follows:
+
+```
+variable                      meaning              default
+-------------------------------------------------------------------
+g:runpy_buffer_size           buffer size          10
+g:runpy_buffer_direction      buffer direction     horizontal
+g:runpy_buffer_position       buffer position      below 
+```
+
 # To Do
 
 - [ ] add expectation entries with `# <` or `# <<< EXPECT` allowing an evaluation of functions similar to unity tests.
