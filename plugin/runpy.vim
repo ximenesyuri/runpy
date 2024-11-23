@@ -103,6 +103,7 @@ function! RunPyExecute(target_file, venv_path)
         endif
         execute 'file runpy_output'
     endif
+
     if !empty(l:output)
         call setline(1, split(l:output, "\n"))
     else
@@ -111,6 +112,17 @@ function! RunPyExecute(target_file, venv_path)
     setlocal buftype=nofile
     setlocal bufhidden=hide
     setlocal noswapfile
+    setlocal readonly
+    nnoremap <buffer> i <nop>
+    nnoremap <buffer> I <nop>
+    nnoremap <buffer> a <nop>
+    nnoremap <buffer> A <nop>
+    nnoremap <buffer> o <nop>
+    nnoremap <buffer> O <nop>
+    nnoremap <buffer> c <nop>
+    nnoremap <buffer> C <nop>
+    nnoremap <buffer> s <nop>
+    nnoremap <buffer> S <nop>
     if exists(':AnsiEsc')
         execute 'AnsiEsc'
     endif
