@@ -112,7 +112,6 @@ function! RunPyExecute(target_file, venv_path)
     setlocal buftype=nofile
     setlocal bufhidden=hide
     setlocal noswapfile
-    setlocal readonly
     nnoremap <buffer> i <nop>
     nnoremap <buffer> I <nop>
     nnoremap <buffer> a <nop>
