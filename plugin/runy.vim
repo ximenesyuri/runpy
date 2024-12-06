@@ -14,7 +14,7 @@ endfunction
 
 function! RunyFindVenv(root_dir)
     if executable('poetry') && filereadable(a:root_dir . '/pyproject.toml')
-        let l:poetry_info = system('cd ' . shellescape(a:root_dir) . ' && poetry env info -p')
+        let l:poetry_info = system('cd ' . shellescape(a:root_dir) . ' && .venv')
         return substitute(l:poetry_info, '\n\+$', '', '')
     endif
     return g:runy_venv
